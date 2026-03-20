@@ -30,9 +30,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust stable
-        uses: dtolnay/rust-action/setup@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Add macOS targets
         if: matrix.platform == 'macos-latest'
@@ -72,7 +70,7 @@ jobs:
             - **Linux**: `.deb` or `.AppImage`
 
             ### Changes
-            See [README](https://github.com/${{ github.repository }}/blob/main/README.md) for details.
+            See [README](https://github.com/${{ github.repository }}/blob/master/README.md) for details.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

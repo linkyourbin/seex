@@ -15,6 +15,7 @@ interface AppState {
   nlbn_last_result: string | null;
   nlbn_show_terminal: boolean;
   nlbn_running: boolean;
+  monitoring: boolean;
   history_count: number;
   matched_count: number;
 }
@@ -33,9 +34,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.language": "Language",
     "nav.about": "About",
     "status.listening": "Listening",
-    "monitor.keyword": "Keyword",
-    "monitor.keywordPlaceholder": "Enter keyword or regex: pattern",
+    "monitor.matchMode": "Match Mode",
+    "monitor.quickId": "Quick ID",
+    "monitor.fullInfo": "Full Info",
     "monitor.set": "Set",
+    "monitor.monitoring": "Monitoring",
+    "monitor.paused": "Paused",
     "monitor.quick": "Quick:",
     "monitor.matched": "Matched",
     "monitor.copyIds": "Copy IDs",
@@ -84,9 +88,12 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.language": "\u8BED\u8A00",
     "nav.about": "\u5173\u4E8E",
     "status.listening": "\u76D1\u542C\u4E2D",
-    "monitor.keyword": "\u5173\u952E\u8BCD",
-    "monitor.keywordPlaceholder": "\u8F93\u5165\u5173\u952E\u8BCD\u6216 regex: \u6A21\u5F0F",
+    "monitor.matchMode": "\u5339\u914D\u6A21\u5F0F",
+    "monitor.quickId": "\u76F4\u63A5 ID",
+    "monitor.fullInfo": "\u4FE1\u606F\u63D0\u53D6",
     "monitor.set": "\u8BBE\u7F6E",
+    "monitor.monitoring": "\u76D1\u542C\u4E2D",
+    "monitor.paused": "\u5DF2\u6682\u505C",
     "monitor.quick": "\u5FEB\u6377:",
     "monitor.matched": "\u5339\u914D\u7ED3\u679C",
     "monitor.copyIds": "\u590D\u5236 ID",
@@ -170,6 +177,18 @@ function applyLanguage(lang: Lang) {
 
 let showMatched = true;
 let showHistory = true;
+let matchQuick = true;
+let matchFull = true;
+
+const PATTERN_QUICK = "regex:(?m)^(C\\d{3,})$";
+const PATTERN_FULL = "regex:\u7F16\u53F7[\uFF1A:]\\s*(C\\d+)";
+
+function buildKeyword(): string {
+  const parts: string[] = [];
+  if (matchFull) parts.push(PATTERN_FULL);
+  if (matchQuick) parts.push(PATTERN_QUICK);
+  return parts.join("||");
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -214,13 +233,7 @@ function renderState(state: AppState) {
   $("status-counts").textContent = `H: ${state.history_count} | M: ${state.matched_count}`;
 
   // Monitor page header
-  $("monitor-status").textContent = `${kwLabel} ${state.keyword || noneLabel} | H: ${state.history_count} | M: ${state.matched_count}`;
-
-  // Keyword input
-  const kwInput = $("keyword-input") as HTMLInputElement;
-  if (document.activeElement !== kwInput) {
-    kwInput.value = state.keyword;
-  }
+  $("monitor-status").textContent = `${kwLabel} ${state.keyword ? "LCSC" : noneLabel} | H: ${state.history_count} | M: ${state.matched_count}`;
 
   // nlbn path
   const pathInput = $("nlbn-path-input") as HTMLInputElement;
@@ -230,6 +243,11 @@ function renderState(state: AppState) {
 
   // Terminal status
   $("terminal-status").textContent = state.nlbn_show_terminal ? t("export.terminalOn") : t("export.terminalOff");
+
+  // Monitor toggle button
+  const monBtn = $("btn-toggle-monitor");
+  monBtn.classList.toggle("active", state.monitoring);
+  monBtn.textContent = state.monitoring ? t("monitor.monitoring") : t("monitor.paused");
 
   // Export
   $("export-count").textContent = `${state.matched_count} ${t("export.itemsReady")}`;
@@ -386,34 +404,25 @@ window.addEventListener("DOMContentLoaded", async () => {
     refreshState();
   });
 
-  // -- Keyword --
-  $("btn-set-keyword").addEventListener("click", async () => {
-    const keyword = ($("keyword-input") as HTMLInputElement).value;
-    await invoke("set_keyword", { keyword });
+  // -- Match mode toggles (independent, both can be on) --
+  $("btn-match-quick").addEventListener("click", async () => {
+    matchQuick = !matchQuick;
+    $("btn-match-quick").classList.toggle("active", matchQuick);
+    await invoke("set_keyword", { keyword: buildKeyword() });
     await refreshState();
   });
 
-  $("keyword-input").addEventListener("keydown", async (e) => {
-    if ((e as KeyboardEvent).key === "Enter") {
-      const keyword = ($("keyword-input") as HTMLInputElement).value;
-      await invoke("set_keyword", { keyword });
-      await refreshState();
-    }
-  });
-
-  $("btn-clear-keyword").addEventListener("click", async () => {
-    ($("keyword-input") as HTMLInputElement).value = "";
-    await invoke("set_keyword", { keyword: "" });
+  $("btn-match-full").addEventListener("click", async () => {
+    matchFull = !matchFull;
+    $("btn-match-full").classList.toggle("active", matchFull);
+    await invoke("set_keyword", { keyword: buildKeyword() });
     await refreshState();
   });
 
-  document.querySelectorAll("[data-keyword]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const keyword = btn.getAttribute("data-keyword")!;
-      ($("keyword-input") as HTMLInputElement).value = keyword;
-      await invoke("set_keyword", { keyword });
-      await refreshState();
-    });
+  // -- Monitor toggle --
+  $("btn-toggle-monitor").addEventListener("click", async () => {
+    await invoke("toggle_monitoring");
+    await refreshState();
   });
 
   // -- Matched toggle --

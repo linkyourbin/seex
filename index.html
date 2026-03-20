@@ -62,15 +62,11 @@
           </div>
           <div class="page-body">
             <div class="card">
-              <div class="card-title" data-i18n="monitor.keyword">Keyword</div>
-              <div class="row">
-                <input type="text" id="keyword-input" data-i18n-placeholder="monitor.keywordPlaceholder" placeholder="Enter keyword or regex: pattern" />
-                <button class="btn-primary" id="btn-set-keyword" data-i18n="monitor.set">Set</button>
-                <button class="btn-ghost" id="btn-clear-keyword">&times;</button>
-              </div>
-              <div class="row" style="margin-top:6px;">
-                <span class="hint" data-i18n="monitor.quick">Quick:</span>
-                <button class="btn-chip" data-keyword="regex:C\d+">C-Code</button>
+              <div class="row match-row">
+                <button class="btn-match active" id="btn-match-quick" data-i18n="monitor.quickId">Quick ID</button>
+                <button class="btn-match active" id="btn-match-full" data-i18n="monitor.fullInfo">Full Info</button>
+                <div class="spacer"></div>
+                <button class="btn-monitor active" id="btn-toggle-monitor" data-i18n="monitor.monitoring">Monitoring</button>
               </div>
             </div>
             <div class="card">

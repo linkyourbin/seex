@@ -18,22 +18,78 @@
 
 ## What is SeEx?
 
-SeEx monitors your clipboard in real time, extracts component IDs using keyword or regex patterns, and exports matched results via the **nlbn** tool. Designed for electronics engineers working with component databases like LCSC.
+SeEx monitors your clipboard in real time, extracts component IDs (e.g. LCSC C-codes) using smart pattern matching, and exports matched results via the **nlbn** tool. Built for electronics engineers working with component databases.
 
-## Features
+---
 
-- **Real-time clipboard monitoring** — event-driven with polling fallback, catches every copy
-- **Keyword & regex matching** — literal substring or `regex:` patterns (e.g. `regex:C\d+`)
-- **Retroactive matching** — when you set a keyword, it scans existing history for matches
-- **nlbn integration** — batch export matched IDs to the nlbn tool (terminal or background mode)
-- **Bilingual UI** — switch between English and Chinese with embedded font support
-- **Cross-platform** — runs on Windows, macOS, and Linux
+## How to Use
 
-## Screenshots
+### 1. Monitor — Match component IDs from clipboard
 
-| Monitor | History | Export | Language |
-|---------|---------|--------|----------|
-| Keyword input, matched results, clipboard preview | Full clipboard history with copy/delete | nlbn export config and actions | EN / CN toggle |
+<p align="center">
+  <img src="public/imgs/Monitor.png" alt="Monitor Page" width="700" />
+</p>
+
+The **Monitor** page is where the magic happens:
+
+- **Quick ID** — Toggle this to match when you directly copy a bare component ID like `C7470135`.
+- **Full Info** — Toggle this to extract the C-code when you copy a full component info block containing `编号：C7470135`.
+- **Monitoring** — Green means active. Click to pause/resume clipboard monitoring.
+- Both **Quick ID** and **Full Info** can be enabled at the same time, so every copy is covered.
+- **Matched** panel shows all unique extracted IDs with timestamps. Use **Copy IDs** to copy them all, or click **Copy** on individual items.
+- **Clipboard** panel previews the latest copied content.
+- **Save History** / **Export Matched** / **Clear All** buttons are pinned at the bottom.
+
+> **Tip:** Duplicate IDs are automatically filtered — copying the same component multiple times won't create duplicates.
+
+---
+
+### 2. History — View all clipboard activity
+
+<p align="center">
+  <img src="public/imgs/History.png" alt="History Page" width="700" />
+</p>
+
+The **History** page shows every clipboard entry captured while monitoring is active. Each entry shows the timestamp and a preview of the copied content. You can **Copy** or **Delete** individual entries. Up to 50 entries are stored.
+
+---
+
+### 3. Export — Batch export via nlbn
+
+<p align="center">
+  <img src="public/imgs/Export.png" alt="Export Page" width="700" />
+</p>
+
+The **Export** page integrates with the **nlbn** command-line tool:
+
+- Set the **export directory** by typing a path or clicking **Browse**.
+- Click **Apply** to save the path.
+- **Toggle Terminal** switches between opening a terminal window (to see nlbn output) or running silently in the background.
+- Click **Export nlbn** to batch-export all matched component IDs.
+
+> **Note:** The `nlbn` tool must be installed and available in your system PATH.
+
+---
+
+### 4. Language — Switch between English and Chinese
+
+<p align="center">
+  <img src="public/imgs/Language.png" alt="Language Page" width="700" />
+</p>
+
+Click **English** or **中文** to switch the entire interface language. When Chinese is selected, the embedded **Source Han Sans** font is used for consistent rendering across all platforms. Your preference is saved and remembered.
+
+---
+
+### 5. About
+
+<p align="center">
+  <img src="public/imgs/About.png" alt="About Page" width="700" />
+</p>
+
+The **About** page shows app info, version, and the tech stack. Click on any technology icon to visit its website.
+
+---
 
 ## Tech Stack
 
@@ -65,20 +121,11 @@ npx tauri dev
 npx tauri build
 ```
 
-The built binary will be at `src-tauri/target/release/seex.exe` (Windows).
-
 Installers are generated at:
-- `src-tauri/target/release/bundle/msi/seex_0.1.0_x64_en-US.msi`
-- `src-tauri/target/release/bundle/nsis/seex_0.1.0_x64-setup.exe`
-
-## Usage
-
-1. Launch SeEx — the default keyword `regex:C\d+` is pre-configured
-2. Copy text containing component IDs (e.g. from LCSC website)
-3. Matched IDs appear in the **Matched** panel automatically
-4. Use **Copy IDs** to copy all matched IDs, or **Export nlbn** to batch export
-5. Switch to **History** to view all clipboard entries
-6. Switch to **Language** to toggle between English and Chinese
+- **Windows**: `src-tauri/target/release/bundle/msi/seex_0.1.0_x64_en-US.msi`
+- **Windows**: `src-tauri/target/release/bundle/nsis/seex_0.1.0_x64-setup.exe`
+- **macOS**: `.dmg` (via GitHub Actions)
+- **Linux**: `.deb` / `.AppImage` (via GitHub Actions)
 
 ## License
 

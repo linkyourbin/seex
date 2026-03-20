@@ -17,6 +17,7 @@ pub struct MonitorState {
     pub matched: Vec<(String, String)>,
     pub keyword: String,
     pub initialized: bool,
+    pub monitoring: bool,
     pub match_debug_log: Vec<String>,
     pub nlbn_output_path: String,
     pub nlbn_last_result: Option<String>,
@@ -32,6 +33,7 @@ impl MonitorState {
             matched: Vec::new(),
             keyword: String::new(),
             initialized: false,
+            monitoring: true,
             match_debug_log: Vec::new(),
             nlbn_output_path: "~/lib".to_string(),
             nlbn_last_result: None,
@@ -79,6 +81,10 @@ impl MonitorState {
     }
 
     pub fn process_clipboard_change(&mut self, content: String) -> bool {
+        if !self.monitoring {
+            return false;
+        }
+
         let trimmed = content.trim().to_string();
         if trimmed.is_empty() {
             return false;
@@ -109,11 +115,14 @@ impl MonitorState {
 
         if !self.keyword.is_empty() {
             if let Some(extracted) = extract_by_keyword(&trimmed, &self.keyword) {
-                self.matched.insert(0, (timestamp, extracted.clone()));
-                if self.matched.len() > 100 {
-                    self.matched.pop();
+                // Only add if this ID isn't already in the matched list
+                if !self.matched.iter().any(|(_, id)| id == &extracted) {
+                    self.matched.insert(0, (timestamp, extracted.clone()));
+                    if self.matched.len() > 100 {
+                        self.matched.pop();
+                    }
+                    self.add_debug_log(format!("Matched: {}", extracted));
                 }
-                self.add_debug_log(format!("Matched: {}", extracted));
             } else {
                 self.add_debug_log("No match found".to_string());
             }
@@ -221,18 +230,10 @@ pub struct MonitorHandle {
 
 impl MonitorHandle {
     pub fn spawn(state: Arc<Mutex<MonitorState>>, app_handle: AppHandle) -> Self {
-        // Pre-read clipboard so the first real user copy isn't swallowed
-        // by the initialization gate in process_clipboard_change.
-        if let Ok(mut clip) = Clipboard::new() {
-            if let Ok(text) = clip.get_text() {
-                if let Ok(mut s) = state.lock() {
-                    let trimmed = text.trim().to_string();
-                    if !trimmed.is_empty() {
-                        s.last_content = trimmed;
-                    }
-                    s.initialized = true;
-                }
-            }
+        // Mark as initialized with empty baseline so the first
+        // clipboard content (even if already present) is captured.
+        if let Ok(mut s) = state.lock() {
+            s.initialized = true;
         }
 
         let stop = Arc::new(AtomicBool::new(false));

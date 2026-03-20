@@ -24,6 +24,7 @@ pub struct AppState {
     pub nlbn_last_result: Option<String>,
     pub nlbn_show_terminal: bool,
     pub nlbn_running: bool,
+    pub monitoring: bool,
     pub history_count: usize,
     pub matched_count: usize,
 }
@@ -50,6 +51,7 @@ fn get_state(monitor: State<ManagedMonitor>) -> AppState {
             nlbn_last_result: m.nlbn_last_result.clone(),
             nlbn_show_terminal: m.nlbn_show_terminal,
             nlbn_running: m.nlbn_running,
+            monitoring: m.monitoring,
         }
     } else {
         AppState {
@@ -60,6 +62,7 @@ fn get_state(monitor: State<ManagedMonitor>) -> AppState {
             nlbn_last_result: None,
             nlbn_show_terminal: true,
             nlbn_running: false,
+            monitoring: true,
             history_count: 0,
             matched_count: 0,
         }
@@ -70,6 +73,18 @@ fn get_state(monitor: State<ManagedMonitor>) -> AppState {
 fn set_keyword(monitor: State<ManagedMonitor>, keyword: String) {
     if let Ok(mut m) = monitor.state.lock() {
         m.set_keyword(keyword);
+    }
+}
+
+#[tauri::command]
+fn toggle_monitoring(monitor: State<ManagedMonitor>) {
+    if let Ok(mut m) = monitor.state.lock() {
+        m.monitoring = !m.monitoring;
+        if m.monitoring {
+            // Clear baseline so the next clipboard content is always captured
+            m.last_content.clear();
+            m.initialized = true;
+        }
     }
 }
 
@@ -232,8 +247,8 @@ pub fn run() {
     if let Ok(mut s) = state.lock() {
         s.set_output_path(config.output_path.clone());
         s.nlbn_show_terminal = config.show_terminal;
-        // Default keyword: match C-series component codes
-        s.set_keyword(r"regex:C\d+".to_string());
+        // Default: LCSC mode — matches C-code after 编号： OR bare C-code
+        s.set_keyword(r"regex:编号[：:]\s*(C\d+)||regex:(?m)^(C\d{3,})$".to_string());
     }
 
     let monitor_state = Arc::clone(&state);
@@ -255,6 +270,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_state,
             set_keyword,
+            toggle_monitoring,
             delete_history,
             delete_matched,
             clear_all,

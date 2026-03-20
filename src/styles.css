@@ -421,6 +421,52 @@ button {
 
 .btn-sm { padding: 4px 12px; font-size: 13px; }
 
+/* Monitor toggle button */
+.btn-monitor {
+  border-radius: var(--radius-pill);
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text-3);
+  transition: all .15s;
+}
+.btn-monitor.active {
+  border-color: var(--success);
+  background: #F0FFF0;
+  color: var(--success);
+}
+.btn-monitor:not(.active) {
+  border-color: var(--danger);
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+/* Match mode buttons */
+.match-row {
+  gap: 10px;
+}
+
+.btn-match {
+  border-radius: var(--radius-pill);
+  padding: 8px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text-3);
+  transition: all .15s;
+}
+.btn-match.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.btn-match:not(.active):hover {
+  border-color: var(--text-3);
+}
+
 /* ================================================================== */
 /*  SCROLL AREAS                                                       */
 /* ================================================================== */
