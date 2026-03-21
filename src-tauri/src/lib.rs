@@ -193,6 +193,27 @@ fn toggle_terminal(monitor: State<ManagedMonitor>) {
 }
 
 #[tauri::command]
+fn check_nlbn() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    let result = std::process::Command::new("cmd")
+        .args(["/C", "nlbn", "--version"])
+        .output();
+
+    #[cfg(not(target_os = "windows"))]
+    let result = std::process::Command::new("nlbn")
+        .arg("--version")
+        .output();
+
+    match result {
+        Ok(output) if output.status.success() => {
+            let ver = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            Ok(ver)
+        }
+        _ => Err("nlbn not found".to_string()),
+    }
+}
+
+#[tauri::command]
 fn nlbn_export(monitor: State<ManagedMonitor>, app_handle: AppHandle) -> String {
     let export_data;
     let show_terminal;
@@ -278,6 +299,7 @@ pub fn run() {
             save_matched,
             set_nlbn_path,
             toggle_terminal,
+            check_nlbn,
             nlbn_export,
             get_unique_ids,
             copy_to_clipboard,

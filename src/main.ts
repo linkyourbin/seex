@@ -74,6 +74,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "export.terminalOn": "Terminal: ON",
     "export.terminalOff": "Terminal: OFF",
     "export.example": "Example: ~/lib or C:\\Users\\xxx\\lib",
+    "export.nlbnNotFound": "nlbn is not installed",
+    "export.nlbnInstallHint": "Install nlbn and add it to your system PATH to use this feature.",
     "language.desc": "Switch interface language",
     "language.select": "Select Language",
     "about.tagline": "Clipboard Event Tracker",
@@ -128,6 +130,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "export.terminalOn": "\u7EC8\u7AEF: \u5F00\u542F",
     "export.terminalOff": "\u7EC8\u7AEF: \u5173\u95ED",
     "export.example": "\u793A\u4F8B: ~/lib \u6216 C:\\Users\\xxx\\lib",
+    "export.nlbnNotFound": "nlbn \u672A\u5B89\u88C5",
+    "export.nlbnInstallHint": "\u8BF7\u5B89\u88C5 nlbn \u5E76\u6DFB\u52A0\u5230\u7CFB\u7EDF PATH \u4EE5\u4F7F\u7528\u6B64\u529F\u80FD\u3002",
     "language.desc": "\u5207\u6362\u754C\u9762\u8BED\u8A00",
     "language.select": "\u9009\u62E9\u8BED\u8A00",
     "about.tagline": "\u526A\u8D34\u677F\u4E8B\u4EF6\u8FFD\u8E2A\u5668",
@@ -443,8 +447,15 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // -- Export page --
   $("btn-nlbn-export").addEventListener("click", async () => {
-    await invoke("nlbn_export");
-    await refreshState();
+    try {
+      await invoke("check_nlbn");
+      await invoke("nlbn_export");
+      await refreshState();
+    } catch {
+      // nlbn not found — show prompt
+      const nlbnPrompt = $("nlbn-not-found");
+      nlbnPrompt.classList.remove("hidden");
+    }
   });
 
   $("btn-browse-folder").addEventListener("click", async () => {

@@ -132,6 +132,16 @@
               </div>
               <div id="nlbn-status" class="msg msg-warn hidden"></div>
               <div id="nlbn-result" class="msg msg-info hidden"></div>
+              <div id="nlbn-not-found" class="nlbn-prompt hidden">
+                <div class="nlbn-prompt-icon">!</div>
+                <div class="nlbn-prompt-text">
+                  <strong data-i18n="export.nlbnNotFound">nlbn is not installed</strong>
+                  <p data-i18n="export.nlbnInstallHint">Install nlbn and add it to your system PATH to use this feature.</p>
+                  <div class="tech-chip" data-url="https://github.com/linkyourbin/nlbn" style="margin-top:8px;display:inline-flex;">
+                    <span>github.com/linkyourbin/nlbn</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="card">
               <div class="card-title" data-i18n="export.config">Configuration</div>
@@ -187,6 +197,7 @@
                 <p class="about-version">v0.1.0</p>
                 <p class="about-desc" data-i18n="about.desc">Monitors clipboard in real time, extracts component IDs using keyword or regex, and exports via nlbn.</p>
                 <div class="about-tech-row">
+                  <div class="tech-chip" data-url="https://github.com/linkyourbin/nlbn"><span>nlbn</span></div>
                   <div class="tech-chip" data-url="https://tauri.app"><img src="/src/assets/tauri.svg" alt="" /><span>Tauri</span></div>
                   <div class="tech-chip" data-url="https://www.rust-lang.org"><img src="/src/assets/rust.svg" alt="" /><span>Rust</span></div>
                   <div class="tech-chip" data-url="https://www.typescriptlang.org"><img src="/src/assets/typescript.svg" alt="" /><span>TypeScript</span></div>
