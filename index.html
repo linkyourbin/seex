@@ -83,17 +83,40 @@
               </div>
               <div id="history-waiting" class="empty-state" data-i18n="monitor.waiting">Waiting for clipboard...</div>
             </div>
+
+            <div class="card">
+              <div class="card-title" data-i18n="monitor.savePaths">Save paths</div>
+              <div class="card-subtitle hint" data-i18n="monitor.savePathsHint">Used by Save History and Export Matched.</div>
+
+              <label class="hint" data-i18n="monitor.historySavePath">Save History file:</label>
+              <div class="row" style="margin-top:4px;">
+                <input type="text" id="history-save-path-input" />
+                <button class="btn-outline btn-sm" id="btn-browse-history-save-path" data-i18n="export.browse">Browse</button>
+                <button class="btn-primary btn-sm" id="btn-apply-history-save-path" data-i18n="export.apply">Apply</button>
+              </div>
+
+              <label class="hint" style="display:block;margin-top:12px;" data-i18n="monitor.matchedSavePath">Export Matched file:</label>
+              <div class="row" style="margin-top:4px;">
+                <input type="text" id="matched-save-path-input" />
+                <button class="btn-outline btn-sm" id="btn-browse-matched-save-path" data-i18n="export.browse">Browse</button>
+                <button class="btn-primary btn-sm" id="btn-apply-matched-save-path" data-i18n="export.apply">Apply</button>
+              </div>
+              <div class="hint" style="margin-top:6px;" data-i18n="monitor.savePathsExample">Example: C:\Users\xxx\Documents\history.txt</div>
+            </div>
           </div>
-          <div class="page-footer">
-            <button class="btn-outline" id="btn-save-history" data-i18n="monitor.saveHistory">Save History</button>
-            <button class="btn-outline" id="btn-save-matched" data-i18n="monitor.exportMatched">Export Matched</button>
-            <div class="spacer"></div>
-            <button class="btn-danger" id="btn-clear-all" data-i18n="monitor.clearAll">Clear All</button>
-            <span id="clear-confirm" class="hidden">
-              <span class="danger-text" data-i18n="monitor.sure">Sure?</span>
-              <button class="btn-danger btn-sm" id="btn-clear-confirm" data-i18n="monitor.yes">Yes</button>
-              <button class="btn-ghost btn-sm" id="btn-clear-cancel" data-i18n="monitor.no">No</button>
-            </span>
+          <div class="page-footer-wrap">
+            <div class="page-footer">
+              <button class="btn-outline" id="btn-save-history" data-i18n="monitor.saveHistory">Save History</button>
+              <button class="btn-outline" id="btn-save-matched" data-i18n="monitor.exportMatched">Export Matched</button>
+              <div class="spacer"></div>
+              <button class="btn-danger" id="btn-clear-all" data-i18n="monitor.clearAll">Clear All</button>
+              <span id="clear-confirm" class="hidden">
+                <span class="danger-text" data-i18n="monitor.sure">Sure?</span>
+                <button class="btn-danger btn-sm" id="btn-clear-confirm" data-i18n="monitor.yes">Yes</button>
+                <button class="btn-ghost btn-sm" id="btn-clear-cancel" data-i18n="monitor.no">No</button>
+              </span>
+            </div>
+            <div id="monitor-save-result" class="msg msg-info hidden"></div>
           </div>
         </section>
 
@@ -118,6 +141,7 @@
           <div class="page-body">
             <div class="card">
               <div class="card-title" data-i18n="export.nlbnExport">nlbn Export</div>
+              <div class="card-subtitle hint" data-i18n="export.nlbnFor">nlbn Export for KiCad</div>
               <div class="row">
                 <span id="nlbn-export-count" class="hint">0 items ready</span>
                 <div class="spacer"></div>
@@ -169,6 +193,7 @@
 
             <div class="card">
               <div class="card-title" data-i18n="export.npnpExport">npnp Export</div>
+              <div class="card-subtitle hint" data-i18n="export.npnpFor">npnp Export for Altium Designer</div>
               <div class="row">
                 <span id="npnp-export-count" class="hint">0 items ready</span>
                 <div class="spacer"></div>
@@ -206,9 +231,11 @@
               <label class="hint" style="display:block;margin-top:12px;" data-i18n="export.npnpOptions">Batch options:</label>
               <div class="row" style="margin-top:4px;">
                 <button class="btn-pill btn-sm" id="btn-toggle-npnp-merge" data-i18n="export.merge">Merge</button>
+                <button class="btn-pill btn-sm" id="btn-toggle-npnp-append" data-i18n="export.mergeAppend">Merge&amp;Append</button>
                 <button class="btn-pill btn-sm" id="btn-toggle-npnp-continue-on-error" data-i18n="export.continueOnError">Continue On Error</button>
                 <button class="btn-pill btn-sm" id="btn-toggle-npnp-force" data-i18n="export.force">Force</button>
               </div>
+              <div class="hint" style="margin-top:6px;" data-i18n="export.mergeAppendHint">Merge&amp;Append extends an existing merged library and skips duplicate IDs (requires Merge).</div>
 
               <label class="hint" style="display:block;margin-top:12px;" data-i18n="export.libraryName">Library name:</label>
               <div class="row" style="margin-top:4px;">
@@ -259,7 +286,7 @@
               <div class="about-info">
                 <h3>SeEx</h3>
                 <p class="about-tagline" data-i18n="about.tagline">Clipboard Event Tracker</p>
-                <p class="about-version">v0.2.2</p>
+                <p class="about-version">v0.3.0</p>
                 <p class="about-desc" data-i18n="about.desc">Monitors clipboard in real time, extracts component IDs using keyword or regex, and exports via nlbn or npnp.</p>
                 <div class="about-tech-row">
                   <div class="tech-chip" data-url="https://github.com/linkyourbin/nlbn"><span>nlbn</span></div>

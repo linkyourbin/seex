@@ -10,6 +10,14 @@ use tauri::{AppHandle, Emitter};
 
 use crate::extract::extract_by_keyword;
 
+pub fn default_save_path(filename: &str) -> String {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.join(filename)))
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_else(|| filename.to_string())
+}
+
 pub struct MonitorState {
     pub last_content: String,
     pub history: Vec<(String, String)>,
@@ -28,10 +36,13 @@ pub struct MonitorState {
     pub npnp_running: bool,
     pub npnp_mode: String,
     pub npnp_merge: bool,
+    pub npnp_append: bool,
     pub npnp_library_name: String,
     pub npnp_parallel: usize,
     pub npnp_continue_on_error: bool,
     pub npnp_force: bool,
+    pub history_save_path: String,
+    pub matched_save_path: String,
 }
 
 impl MonitorState {
@@ -54,10 +65,13 @@ impl MonitorState {
             npnp_running: false,
             npnp_mode: "full".to_string(),
             npnp_merge: false,
+            npnp_append: false,
             npnp_library_name: "SeExMerged".to_string(),
             npnp_parallel: 4,
             npnp_continue_on_error: true,
             npnp_force: false,
+            history_save_path: default_save_path("history.txt"),
+            matched_save_path: default_save_path("matched.txt"),
         }
     }
 
@@ -176,6 +190,16 @@ impl MonitorState {
 
     pub fn set_npnp_merge(&mut self, merge: bool) {
         self.npnp_merge = merge;
+        if !merge {
+            self.npnp_append = false;
+        }
+    }
+
+    pub fn set_npnp_append(&mut self, append: bool) {
+        self.npnp_append = append;
+        if append {
+            self.npnp_merge = true;
+        }
     }
 
     pub fn set_npnp_library_name(&mut self, library_name: String) {
@@ -192,6 +216,24 @@ impl MonitorState {
 
     pub fn set_npnp_force(&mut self, force: bool) {
         self.npnp_force = force;
+    }
+
+    pub fn set_history_save_path(&mut self, path: String) {
+        let trimmed = path.trim();
+        self.history_save_path = if trimmed.is_empty() {
+            default_save_path("history.txt")
+        } else {
+            trimmed.to_string()
+        };
+    }
+
+    pub fn set_matched_save_path(&mut self, path: String) {
+        let trimmed = path.trim();
+        self.matched_save_path = if trimmed.is_empty() {
+            default_save_path("matched.txt")
+        } else {
+            trimmed.to_string()
+        };
     }
 
     pub fn delete_history(&mut self, index: usize) {

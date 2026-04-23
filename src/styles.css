@@ -257,6 +257,22 @@ body {
   flex-shrink: 0;
 }
 
+.page-footer-wrap {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
+.page-footer-wrap .page-footer {
+  border-top: none;
+}
+
+.page-footer-wrap #monitor-save-result {
+  margin: 0 28px 10px;
+}
+
 /* ================================================================== */
 /*  CARDS                                                              */
 /* ================================================================== */
@@ -275,6 +291,11 @@ body {
   font-weight: 600;
   font-size: 16px;
   margin-bottom: 10px;
+}
+
+.card-subtitle {
+  margin-top: -6px;
+  margin-bottom: 12px;
 }
 
 .card-title-row {

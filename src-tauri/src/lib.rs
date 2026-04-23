@@ -4,10 +4,11 @@ mod monitor;
 mod nlbn;
 mod npnp;
 
-use config::{AppConfig, NlbnConfig, NpnpConfig};
+use config::{AppConfig, MonitorConfig, NlbnConfig, NpnpConfig};
 use monitor::{MonitorHandle, MonitorState};
 use serde::Serialize;
 use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager, State};
 
@@ -26,6 +27,7 @@ pub struct AppState {
     pub npnp_running: bool,
     pub npnp_mode: String,
     pub npnp_merge: bool,
+    pub npnp_append: bool,
     pub npnp_library_name: String,
     pub npnp_parallel: usize,
     pub npnp_continue_on_error: bool,
@@ -33,6 +35,8 @@ pub struct AppState {
     pub monitoring: bool,
     pub history_count: usize,
     pub matched_count: usize,
+    pub history_save_path: String,
+    pub matched_save_path: String,
 }
 
 pub struct ManagedMonitor {
@@ -51,10 +55,15 @@ fn snapshot_config(state: &MonitorState) -> AppConfig {
             output_path: state.npnp_output_path.clone(),
             mode: state.npnp_mode.clone(),
             merge: state.npnp_merge,
+            append: state.npnp_append,
             library_name: state.npnp_library_name.clone(),
             parallel: state.npnp_parallel,
             continue_on_error: state.npnp_continue_on_error,
             force: state.npnp_force,
+        },
+        monitor: MonitorConfig {
+            history_save_path: state.history_save_path.clone(),
+            matched_save_path: state.matched_save_path.clone(),
         },
     }
 }
@@ -86,11 +95,14 @@ fn get_state(monitor: State<ManagedMonitor>) -> AppState {
             npnp_running: m.npnp_running,
             npnp_mode: m.npnp_mode.clone(),
             npnp_merge: m.npnp_merge,
+            npnp_append: m.npnp_append,
             npnp_library_name: m.npnp_library_name.clone(),
             npnp_parallel: m.npnp_parallel,
             npnp_continue_on_error: m.npnp_continue_on_error,
             npnp_force: m.npnp_force,
             monitoring: m.monitoring,
+            history_save_path: m.history_save_path.clone(),
+            matched_save_path: m.matched_save_path.clone(),
         }
     } else {
         AppState {
@@ -107,6 +119,7 @@ fn get_state(monitor: State<ManagedMonitor>) -> AppState {
             npnp_running: false,
             npnp_mode: defaults.npnp.mode,
             npnp_merge: defaults.npnp.merge,
+            npnp_append: defaults.npnp.append,
             npnp_library_name: defaults.npnp.library_name,
             npnp_parallel: defaults.npnp.parallel,
             npnp_continue_on_error: defaults.npnp.continue_on_error,
@@ -114,6 +127,8 @@ fn get_state(monitor: State<ManagedMonitor>) -> AppState {
             monitoring: true,
             history_count: 0,
             matched_count: 0,
+            history_save_path: monitor::default_save_path("history.txt"),
+            matched_save_path: monitor::default_save_path("matched.txt"),
         }
     }
 }
@@ -165,48 +180,91 @@ fn clear_all(monitor: State<ManagedMonitor>) {
     }
 }
 
+fn ensure_parent_dir(path: &Path) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)?;
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn save_history(monitor: State<ManagedMonitor>) -> String {
-    let exe_dir = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-        .unwrap_or_else(|| std::path::PathBuf::from("."));
-
-    if let Ok(m) = monitor.state.lock() {
+    let (path, entries) = {
+        let Ok(m) = monitor.state.lock() else {
+            return "State lock failed".to_string();
+        };
         if m.history.is_empty() {
             return "No history to save".to_string();
         }
-        let path = exe_dir.join("history.txt");
-        if let Ok(mut file) = std::fs::File::create(&path) {
-            for (time, content) in &m.history {
-                let _ = writeln!(file, "[{}] {}", time, content);
-            }
-            return format!("Saved to {}", path.display());
+        (PathBuf::from(&m.history_save_path), m.history.clone())
+    };
+
+    if let Err(err) = ensure_parent_dir(&path) {
+        return format!("Save failed: {}", err);
+    }
+    let file = match std::fs::File::create(&path) {
+        Ok(file) => file,
+        Err(err) => return format!("Save failed: {}", err),
+    };
+    let mut writer = std::io::BufWriter::new(file);
+    for (time, content) in &entries {
+        if let Err(err) = writeln!(writer, "[{}] {}", time, content) {
+            return format!("Save failed: {}", err);
         }
     }
-    "Save failed".to_string()
+    if let Err(err) = writer.flush() {
+        return format!("Save failed: {}", err);
+    }
+    format!("Saved to {}", path.display())
 }
 
 #[tauri::command]
 fn save_matched(monitor: State<ManagedMonitor>) -> String {
-    let exe_dir = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-        .unwrap_or_else(|| std::path::PathBuf::from("."));
-
-    if let Ok(m) = monitor.state.lock() {
+    let (path, entries) = {
+        let Ok(m) = monitor.state.lock() else {
+            return "State lock failed".to_string();
+        };
         if m.matched.is_empty() {
             return "No matched results to export".to_string();
         }
-        let path = exe_dir.join("matched.txt");
-        if let Ok(mut file) = std::fs::File::create(&path) {
-            for (_, extracted) in &m.matched {
-                let _ = writeln!(file, "{}", extracted);
-            }
-            return format!("Exported to {}", path.display());
+        (PathBuf::from(&m.matched_save_path), m.matched.clone())
+    };
+
+    if let Err(err) = ensure_parent_dir(&path) {
+        return format!("Export failed: {}", err);
+    }
+    let file = match std::fs::File::create(&path) {
+        Ok(file) => file,
+        Err(err) => return format!("Export failed: {}", err),
+    };
+    let mut writer = std::io::BufWriter::new(file);
+    for (_, extracted) in &entries {
+        if let Err(err) = writeln!(writer, "{}", extracted) {
+            return format!("Export failed: {}", err);
         }
     }
-    "Export failed".to_string()
+    if let Err(err) = writer.flush() {
+        return format!("Export failed: {}", err);
+    }
+    format!("Exported to {}", path.display())
+}
+
+#[tauri::command]
+fn set_history_save_path(monitor: State<ManagedMonitor>, path: String) {
+    if let Ok(mut m) = monitor.state.lock() {
+        m.set_history_save_path(path);
+    }
+    save_config(&monitor);
+}
+
+#[tauri::command]
+fn set_matched_save_path(monitor: State<ManagedMonitor>, path: String) {
+    if let Ok(mut m) = monitor.state.lock() {
+        m.set_matched_save_path(path);
+    }
+    save_config(&monitor);
 }
 
 #[tauri::command]
@@ -253,6 +311,14 @@ fn set_npnp_mode(monitor: State<ManagedMonitor>, mode: String) {
 fn set_npnp_merge(monitor: State<ManagedMonitor>, merge: bool) {
     if let Ok(mut m) = monitor.state.lock() {
         m.set_npnp_merge(merge);
+    }
+    save_config(&monitor);
+}
+
+#[tauri::command]
+fn set_npnp_append(monitor: State<ManagedMonitor>, append: bool) {
+    if let Ok(mut m) = monitor.state.lock() {
+        m.set_npnp_append(append);
     }
     save_config(&monitor);
 }
@@ -341,6 +407,7 @@ fn npnp_export(monitor: State<ManagedMonitor>, app_handle: AppHandle) -> String 
             output_path: m.npnp_output_path.clone(),
             mode: m.npnp_mode.clone(),
             merge: m.npnp_merge,
+            append: m.npnp_append,
             library_name: m.npnp_library_name.clone(),
             parallel: m.npnp_parallel,
             continue_on_error: m.npnp_continue_on_error,
@@ -382,10 +449,13 @@ pub fn run() {
         s.set_npnp_output_path(config.npnp.output_path.clone());
         s.set_npnp_mode(config.npnp.mode.clone());
         s.set_npnp_merge(config.npnp.merge);
+        s.set_npnp_append(config.npnp.append);
         s.set_npnp_library_name(config.npnp.library_name.clone());
         s.set_npnp_parallel(config.npnp.parallel);
         s.set_npnp_continue_on_error(config.npnp.continue_on_error);
         s.set_npnp_force(config.npnp.force);
+        s.set_history_save_path(config.monitor.history_save_path.clone());
+        s.set_matched_save_path(config.monitor.matched_save_path.clone());
         s.set_keyword(
             "regex:\u{7f16}\u{53f7}[\u{ff1a}:]\\s*(C\\d+)||regex:(?m)^(C\\d{3,})$".to_string(),
         );
@@ -416,12 +486,15 @@ pub fn run() {
             clear_all,
             save_history,
             save_matched,
+            set_history_save_path,
+            set_matched_save_path,
             set_nlbn_path,
             toggle_nlbn_terminal,
             set_nlbn_parallel,
             set_npnp_path,
             set_npnp_mode,
             set_npnp_merge,
+            set_npnp_append,
             set_npnp_library_name,
             set_npnp_parallel,
             set_npnp_continue_on_error,

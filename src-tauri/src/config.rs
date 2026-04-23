@@ -11,6 +11,7 @@ pub struct AppConfig {
     pub nlbn: NlbnConfig,
     #[serde(alias = "syft")]
     pub npnp: NpnpConfig,
+    pub monitor: MonitorConfig,
 }
 
 impl Default for AppConfig {
@@ -18,8 +19,16 @@ impl Default for AppConfig {
         Self {
             nlbn: NlbnConfig::default(),
             npnp: NpnpConfig::default(),
+            monitor: MonitorConfig::default(),
         }
     }
+}
+
+#[derive(Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct MonitorConfig {
+    pub history_save_path: String,
+    pub matched_save_path: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -46,6 +55,7 @@ pub struct NpnpConfig {
     pub output_path: String,
     pub mode: String,
     pub merge: bool,
+    pub append: bool,
     pub library_name: String,
     pub parallel: usize,
     pub continue_on_error: bool,
@@ -58,6 +68,7 @@ impl Default for NpnpConfig {
             output_path: "npnp_export".to_string(),
             mode: "full".to_string(),
             merge: false,
+            append: false,
             library_name: "SeExMerged".to_string(),
             parallel: 4,
             continue_on_error: true,

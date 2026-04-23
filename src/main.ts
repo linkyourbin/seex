@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 interface AppState {
@@ -17,6 +17,7 @@ interface AppState {
   npnp_running: boolean;
   npnp_mode: NpnpMode;
   npnp_merge: boolean;
+  npnp_append: boolean;
   npnp_library_name: string;
   npnp_parallel: number;
   npnp_continue_on_error: boolean;
@@ -24,6 +25,8 @@ interface AppState {
   monitoring: boolean;
   history_count: number;
   matched_count: number;
+  history_save_path: string;
+  matched_save_path: string;
 }
 
 type ExportTool = "nlbn" | "npnp";
@@ -94,6 +97,11 @@ const enTranslations: Record<string, string> = {
   "monitor.waiting": "Waiting for clipboard...",
   "monitor.saveHistory": "Save History",
   "monitor.exportMatched": "Export Matched",
+  "monitor.savePaths": "Save paths",
+  "monitor.savePathsHint": "Used by Save History and Export Matched.",
+  "monitor.historySavePath": "Save History file:",
+  "monitor.matchedSavePath": "Export Matched file:",
+  "monitor.savePathsExample": "Example: C:\\Users\\xxx\\Documents\\history.txt",
   "monitor.clearAll": "Clear All",
   "monitor.sure": "Sure?",
   "monitor.yes": "Yes",
@@ -130,6 +138,10 @@ const enTranslations: Record<string, string> = {
   "export.schlib": "SchLib",
   "export.pcblib": "PcbLib",
   "export.merge": "Merge",
+  "export.mergeAppend": "Merge&Append",
+  "export.mergeAppendHint": "Merge&Append extends an existing merged library and skips duplicate IDs (requires Merge).",
+  "export.nlbnFor": "nlbn Export for KiCad",
+  "export.npnpFor": "npnp Export for Altium Designer",
   "export.libraryName": "Library name:",
   "export.libraryNameHint": "Used as the merged SchLib/PcbLib file name when Merge is enabled.",
   "export.parallel": "Parallel jobs:",
@@ -167,6 +179,11 @@ const zhTranslations: Record<string, string> = {
   "monitor.waiting": "\u7b49\u5f85\u526a\u8d34\u677f\u5185\u5bb9...",
   "monitor.saveHistory": "\u4fdd\u5b58\u5386\u53f2",
   "monitor.exportMatched": "\u5bfc\u51fa\u5339\u914d",
+  "monitor.savePaths": "\u4fdd\u5b58\u8def\u5f84",
+  "monitor.savePathsHint": "\u7531\u201c\u4fdd\u5b58\u5386\u53f2\u201d\u548c\u201c\u5bfc\u51fa\u5339\u914d\u201d\u4f7f\u7528\u3002",
+  "monitor.historySavePath": "\u4fdd\u5b58\u5386\u53f2\u6587\u4ef6:",
+  "monitor.matchedSavePath": "\u5bfc\u51fa\u5339\u914d\u6587\u4ef6:",
+  "monitor.savePathsExample": "\u793a\u4f8b: C:\\Users\\xxx\\Documents\\history.txt",
   "monitor.clearAll": "\u6e05\u7a7a\u5168\u90e8",
   "monitor.sure": "\u786e\u5b9a\u5417\uff1f",
   "monitor.yes": "\u662f",
@@ -201,6 +218,10 @@ const zhTranslations: Record<string, string> = {
   "export.npnpOptions": "\u6279\u5904\u7406\u9009\u9879:",
   "export.full": "\u5b8c\u6574",
   "export.merge": "\u5408\u5e76",
+  "export.mergeAppend": "\u5408\u5e76\u8ffd\u52a0",
+  "export.mergeAppendHint": "\u5408\u5e76\u8ffd\u52a0\u4f1a\u5728\u73b0\u6709\u7684\u5408\u5e76\u5e93\u57fa\u7840\u4e0a\u8ffd\u52a0\u5143\u4ef6\u5e76\u8df3\u8fc7\u91cd\u590d ID\uff08\u9700\u8981\u540c\u65f6\u542f\u7528\u5408\u5e76\uff09\u3002",
+  "export.nlbnFor": "nlbn KiCad \u5bfc\u51fa",
+  "export.npnpFor": "npnp Altium Designer \u5bfc\u51fa",
   "export.libraryName": "\u5e93\u540d\u79f0:",
   "export.libraryNameHint": "\u542f\u7528\u5408\u5e76\u65f6\u4f5c\u4e3a\u5408\u5e76 SchLib/PcbLib \u6587\u4ef6\u540d\u3002",
   "export.parallel": "\u5e76\u884c\u4efb\u52a1\u6570:",
@@ -459,6 +480,8 @@ function renderState(state: AppState) {
   syncInputValue("npnp-path-input", state.npnp_output_path);
   syncInputValue("npnp-library-name-input", state.npnp_library_name);
   syncInputValue("npnp-parallel-input", String(state.npnp_parallel));
+  syncInputValue("history-save-path-input", state.history_save_path);
+  syncInputValue("matched-save-path-input", state.matched_save_path);
 
   $("nlbn-terminal-status").textContent = state.nlbn_show_terminal ? t("export.terminalOn") : t("export.terminalOff");
 
@@ -497,6 +520,7 @@ function renderState(state: AppState) {
   });
 
   $("btn-toggle-npnp-merge").classList.toggle("active", state.npnp_merge);
+  $("btn-toggle-npnp-append").classList.toggle("active", state.npnp_append);
   $("btn-toggle-npnp-continue-on-error").classList.toggle("active", state.npnp_continue_on_error);
   $("btn-toggle-npnp-force").classList.toggle("active", state.npnp_force);
 
@@ -601,6 +625,18 @@ async function selectDirectory(title: string): Promise<string | null> {
   return typeof selected === "string" ? selected : null;
 }
 
+async function selectSaveFile(title: string, defaultPath: string | undefined): Promise<string | null> {
+  const selected = await save({
+    title,
+    defaultPath: defaultPath && defaultPath.trim().length > 0 ? defaultPath : undefined,
+    filters: [
+      { name: "Text", extensions: ["txt"] },
+      { name: "All files", extensions: ["*"] },
+    ],
+  });
+  return typeof selected === "string" ? selected : null;
+}
+
 function parsePositiveIntOrFallback(value: string, fallback: number): number {
   const parsed = Number.parseInt(value.trim(), 10);
   return Number.isFinite(parsed) && parsed >= 1 ? parsed : fallback;
@@ -611,6 +647,31 @@ function errorMessage(error: unknown): string {
     return error.message;
   }
   return String(error);
+}
+
+let monitorSaveResultTimer: number | null = null;
+
+function showMonitorSaveResult(message: string, kind?: ExportMessageKind) {
+  const el = $("monitor-save-result");
+  const resolvedKind: ExportMessageKind = kind ?? classifySaveResult(message);
+  el.textContent = message;
+  el.className = `msg ${messageClass(resolvedKind)}`;
+
+  if (monitorSaveResultTimer !== null) {
+    window.clearTimeout(monitorSaveResultTimer);
+  }
+  monitorSaveResultTimer = window.setTimeout(() => {
+    el.textContent = "";
+    el.className = "msg msg-info hidden";
+    monitorSaveResultTimer = null;
+  }, 6000);
+}
+
+function classifySaveResult(message: string): ExportMessageKind {
+  const lower = message.toLowerCase();
+  if (lower.startsWith("saved") || lower.startsWith("exported")) return "success";
+  if (lower.includes("failed")) return "error";
+  return "warn";
 }
 
 function showExportStartResult(tool: ExportTool, result: string): boolean {
@@ -847,6 +908,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+  $("btn-toggle-npnp-append").addEventListener("click", async () => {
+    const active = $("btn-toggle-npnp-append").classList.contains("active");
+    await queueExportConfigWrite(async () => {
+      await invoke("set_npnp_append", { append: !active });
+      await refreshState();
+    });
+  });
+
   $("btn-toggle-npnp-continue-on-error").addEventListener("click", async () => {
     const active = $("btn-toggle-npnp-continue-on-error").classList.contains("active");
     await queueExportConfigWrite(async () => {
@@ -881,11 +950,61 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   $("btn-save-history").addEventListener("click", async () => {
-    await invoke("save_history");
+    try {
+      const result = await invoke<string>("save_history");
+      showMonitorSaveResult(result);
+    } catch (error) {
+      showMonitorSaveResult(errorMessage(error), "error");
+    }
+  });
+
+  $("btn-apply-history-save-path").addEventListener("click", async () => {
+    const path = ($("history-save-path-input") as HTMLInputElement).value;
+    await queueExportConfigWrite(async () => {
+      await invoke("set_history_save_path", { path });
+      await refreshState();
+    });
+  });
+
+  $("btn-browse-history-save-path").addEventListener("click", async () => {
+    const current = ($("history-save-path-input") as HTMLInputElement).value;
+    const selected = await selectSaveFile("Choose Save History file", current);
+    if (selected) {
+      ($("history-save-path-input") as HTMLInputElement).value = selected;
+      await queueExportConfigWrite(async () => {
+        await invoke("set_history_save_path", { path: selected });
+        await refreshState();
+      });
+    }
+  });
+
+  $("btn-apply-matched-save-path").addEventListener("click", async () => {
+    const path = ($("matched-save-path-input") as HTMLInputElement).value;
+    await queueExportConfigWrite(async () => {
+      await invoke("set_matched_save_path", { path });
+      await refreshState();
+    });
+  });
+
+  $("btn-browse-matched-save-path").addEventListener("click", async () => {
+    const current = ($("matched-save-path-input") as HTMLInputElement).value;
+    const selected = await selectSaveFile("Choose Export Matched file", current);
+    if (selected) {
+      ($("matched-save-path-input") as HTMLInputElement).value = selected;
+      await queueExportConfigWrite(async () => {
+        await invoke("set_matched_save_path", { path: selected });
+        await refreshState();
+      });
+    }
   });
 
   $("btn-save-matched").addEventListener("click", async () => {
-    await invoke("save_matched");
+    try {
+      const result = await invoke<string>("save_matched");
+      showMonitorSaveResult(result);
+    } catch (error) {
+      showMonitorSaveResult(errorMessage(error), "error");
+    }
   });
 
   $("btn-clear-all").addEventListener("click", () => {
