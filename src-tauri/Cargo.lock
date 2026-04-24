@@ -2496,9 +2496,9 @@ checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 
 [[package]]
 name = "npnp"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58b44b326f7002edb13ea8abf8aaff5665e817d7636c2d01091b16cd9b0cb810"
+checksum = "14bafdb07a27a76261be0b6a5f4d0a500f695d1abe9261a83e4b6bb10aaa61d3"
 dependencies = [
  "cfb 0.14.0",
  "clap",
@@ -3798,7 +3798,7 @@ dependencies = [
 
 [[package]]
 name = "seex"
-version = "0.3.0"
+version = "0.3.2"
 dependencies = [
  "arboard",
  "chrono",

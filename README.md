@@ -123,7 +123,7 @@ The **About** page shows app info, version, and the tech stack. Click on any tec
 - [Node.js](https://nodejs.org/) (v18+)
 - [Tauri CLI](https://tauri.app/start/)
 - `nlbn` in your `PATH` if you want to use the `nlbn` export option
-- The local `npnp` Rust dependency available at the path referenced by `src-tauri/Cargo.toml`
+- Cargo access to resolve the published `npnp` `v0.1.5` crate from crates.io
 
 ### Development
 
