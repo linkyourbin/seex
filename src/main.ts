@@ -552,11 +552,6 @@ function renderState(state: AppState) {
   $("btn-toggle-nlbn-overwrite").classList.toggle("active", state.nlbn_overwrite);
   $("btn-toggle-nlbn-project-relative").classList.toggle("active", state.nlbn_project_relative);
 
-  const nlbnLibraryInput = $("nlbn-library-name-input") as HTMLInputElement;
-  const nlbnLibraryApply = $("btn-apply-nlbn-library-name") as HTMLButtonElement;
-  nlbnLibraryInput.disabled = !state.nlbn_append;
-  nlbnLibraryApply.disabled = !state.nlbn_append;
-
   npnpModes.forEach((mode) => {
     $("btn-npnp-mode-" + mode).classList.toggle("active", state.npnp_mode === mode);
   });

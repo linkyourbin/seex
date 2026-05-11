@@ -337,15 +337,11 @@ fn normalize_output_path(path: &str) -> String {
 }
 
 fn effective_library_name(req: &ExportRequest) -> Option<String> {
-    if !req.append {
+    let trimmed = req.library_name.trim();
+    if trimmed.is_empty() {
         None
     } else {
-        let trimmed = req.library_name.trim();
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(trimmed.to_string())
-        }
+        Some(trimmed.to_string())
     }
 }
 
