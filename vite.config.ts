@@ -1,10 +1,15 @@
 import { defineConfig } from "vite";
+import { readFile } from "node:fs/promises";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
+const packageJson = JSON.parse(await readFile(new URL("./package.json", import.meta.url), "utf-8")) as { version: string };
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

@@ -3,6 +3,8 @@ import { listen } from "@tauri-apps/api/event";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
+declare const __APP_VERSION__: string;
+
 interface AppState {
   history: [string, string][];
   matched: [string, string][];
@@ -760,6 +762,8 @@ async function syncNpnpExportInputs() {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
+  $("about-version").textContent = `v${__APP_VERSION__}`;
+
   const savedLang = localStorage.getItem("seex-lang") as Lang | null;
   if (savedLang === "zh" || savedLang === "en") {
     applyLanguage(savedLang);
