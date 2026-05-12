@@ -42,7 +42,7 @@ This is a gui bridge for [`nlbn`](https://github.com/linkyourbin/nlbn) and [`npn
 
 ## How to use
 
-Just install it from github release, or you can build it on your own for your own platform. Then open `seex` while you go to [`LCSC`](https://www.szlcsc.com/) to pick those components you need, and click the `复制`  button, the tool `seex` will macth the id of the compoent and then you can export.
+Just install it from github release, or you can build it on your own for your own platform. Then open `seex` while you go to [`LCSC`](https://www.szlcsc.com/) to pick those components you need, and click the `复制/copy`  button, the tool `seex` will macth the id of the compoent and then you can export.
 
 <p align="center">
   <img src="public/imgs/lcsc.png" alt="SeEx npnp export page" width="340" />
