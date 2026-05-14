@@ -1,6 +1,6 @@
 [package]
 name = "seex"
-version = "0.3.7"
+version = "0.3.8"
 authors = ["linkyourbin"]
 edition = "2024"
 
@@ -21,6 +21,6 @@ arboard = "3.6.1"
 clipboard-master = "4.0.0"
 chrono = "0.4.44"
 regex = "1.12.3"
-npnp = "0.1.9"
+npnp = "0.1.10"
 tokio = { version = "1.50.0", features = ["rt", "sync"] }
 nlbn = "1.0.27"

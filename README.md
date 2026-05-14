@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.3.7-E8656C" alt="version" />
+  <img src="https://img.shields.io/badge/version-0.3.8-E8656C" alt="version" />
   <img src="https://img.shields.io/badge/license-CC%20BY--NC%204.0-F4845F" alt="license" />
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-66BB6A" alt="platform" />
 </p>
